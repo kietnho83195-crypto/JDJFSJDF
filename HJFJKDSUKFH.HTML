@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thử Thách Lịch Sử</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #e67e22;
+            --success: #27ae60;
+            --danger: #c0392b;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #game-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 { color: var(--primary); }
+        
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+            background: var(--primary);
+            color: white;
+        }
+
+        .menu-btn:hover { transform: scale(1.02); opacity: 0.9; }
+        .btn-easy { background: #27ae60; }
+        .btn-med { background: #f39c12; }
+        .btn-hard { background: #c0392b; }
+
+        .hidden { display: none; }
+
+        .question { font-size: 1.3rem; margin-bottom: 20px; font-weight: bold; }
+
+        .option {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 2px solid var(--light);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option:hover { background: var(--light); }
+        .correct { background: var(--success) !important; color: white; border-color: var(--success); }
+        .wrong { background: var(--danger) !important; color: white; border-color: var(--danger); }
+
+        #score-display { font-size: 1.2rem; margin-top: 20px; color: var(--secondary); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="start-screen">
+        <h1>Chinh Phục Lịch Sử</h1>
+        <p>Chọn độ khó để bắt đầu:</p>
+        <button class="menu-btn btn-easy" onclick="startGame('easy')">Dễ (Người mới)</button>
+        <button class="menu-btn btn-med" onclick="startGame('medium')">Trung bình (Am hiểu)</button>
+        <button class="menu-btn btn-hard" onclick="startGame('hard')">Khó (Chuyên gia)</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div id="question-info">Câu hỏi <span id="current-idx">1</span>/5</div>
+        <div class="question" id="question-text">Câu hỏi ở đây?</div>
+        <div id="options-container"></div>
+        <div id="score-display">Điểm: <span id="score">0</span></div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <h2>Kết Thúc!</h2>
+        <p id="final-msg"></p>
+        <p>Tổng điểm của bạn: <span id="final-score">0</span>/5</p>
+        <button class="menu-btn" onclick="location.reload()">Chơi lại</button>
+    </div>
+</div>
+
+<script>
+    const questions = {
+        easy: [
+            { q: "Vị vua cuối cùng của triều đại phong kiến Việt Nam là ai?", a: ["Bảo Đại", "Hàm Nghi", "Thành Thái", "Duy Tân"], c: 0 },
+            { q: "Kim Tự Tháp là biểu tượng của quốc gia nào?", a: ["Hy Lạp", "Ai Cập", "Ấn Độ", "Trung Quốc"], c: 1 },
+            { q: "Người tìm ra châu Mỹ năm 1492 là ai?", a: ["Vasco da Gama", "Magellan", "Christopher Columbus", "Marco Polo"], c: 2 },
+            { q: "Chiến thắng Điện Biên Phủ lừng lẫy năm bao nhiêu?", a: ["1945", "1954", "1975", "1930"], c: 1 },
+            { q: "Vạn Lý Trường Thành nằm ở đâu?", a: ["Nhật Bản", "Hàn Quốc", "Mông Cổ", "Trung Quốc"], c: 3 }
+        ],
+        medium: [
+            { q: "Sự kiện nào đánh dấu sự kết thúc của Chiến tranh Thế giới thứ 2?", a: ["Đức đầu hàng", "Mỹ thả bom nguyên tử xuống Nhật", "Liên Xô chiếm Berlin", "Cả 3 phương án trên"], c: 3 },
+            { q: "Ai là người lãnh đạo cuộc cách mạng tháng Mười Nga năm 1917?", a: ["Stalin", "Lenin", "Trotsky", "Gorbachev"], c: 1 },
+            { q: "Vương triều nào dài nhất trong lịch sử phong kiến Việt Nam?", a: ["Nhà Lê", "Nhà Lý", "Nhà Trần", "Nhà Nguyễn"], c: 0 },
+            { q: "Thành phố nào từng được gọi là Sài Gòn?", a: ["Đà Nẵng", "Hà Nội", "TP. Hồ Chí Minh", "Cần Thơ"], c: 2 },
+            { q: "Napoléon Bonaparte là hoàng đế của nước nào?", a: ["Anh", "Ý", "Đức", "Pháp"], c: 3 }
+        ],
+        hard: [
+            { q: "Bộ luật thành văn đầu tiên của nước ta có tên là gì?", a: ["Quốc triều hình luật", "Luật Hồng Đức", "Hình thư", "Gia Long hiệp kỷ"], c: 2 },
+            { q: "Trận đánh nào kết thúc sự thống trị của Napoléon năm 1815?", a: ["Trận Waterloo", "Trận Austerlitz", "Trận Leipzig", "Trận Borodino"], c: 0 },
+            { q: "Đế chế Byzantine là tên gọi khác của đế chế nào?", a: ["Đế chế La Mã Tây phương", "Đế chế La Mã Đông phương", "Đế chế Ottoman", "Đế chế Ba Tư"], c: 1 },
+            { q: "Ai là tác giả của 'Bình Ngô Đại Cáo'?", a: ["Lê Lợi", "Nguyễn Trãi", "Trần Hưng Đạo", "Chu Văn An"], c: 1 },
+            { q: "Hiệp ước Westphalia (1648) kết thúc cuộc chiến kéo dài bao nhiêu năm?", a: ["100 năm", "7 năm", "30 năm", "80 năm"], c: 2 }
+        ]
+    };
+
+    let currentLevel = [];
+    let currentIdx = 0;
+    let score = 0;
+    let canClick = true;
+
+    function startGame(level) {
+        currentLevel = questions[level];
+        currentIdx = 0;
+        score = 0;
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        canClick = true;
+        const qData = currentLevel[currentIdx];
+        document.getElementById('current-idx').innerText = currentIdx + 1;
+        document.getElementById('question-text').innerText = qData.q;
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+
+        qData.a.forEach((opt, index) => {
+            const btn = document.createElement('div');
+            btn.className = 'option';
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index, btn);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(idx, btn) {
+        if (!canClick) return;
+        canClick = false;
+
+        const correctIdx = currentLevel[currentIdx].c;
+        const options = document.getElementsByClassName('option');
+
+        if (idx === correctIdx) {
+            btn.classList.add('correct');
+            score++;
+            document.getElementById('score').innerText = score;
+        } else {
+            btn.classList.add('wrong');
+            options[correctIdx].classList.add('correct');
+        }
+
+        setTimeout(() => {
+            currentIdx++;
+            if (currentIdx < currentLevel.length) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }, 1500);
+    }
+
+    function showResult() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('final-score').innerText = score;
+        
+        let msg = "";
+        if (score === 5) msg = "Tuyệt vời! Bạn là một nhà sử học thực thụ.";
+        else if (score >= 3) msg = "Khá lắm! Kiến thức của bạn rất tốt.";
+        else msg = "Đừng buồn, hãy đọc thêm sách lịch sử nhé!";
+        
+        document.getElementById('final-msg').innerText = msg;
+    }
+</script>
+
+</body>
+</html>
